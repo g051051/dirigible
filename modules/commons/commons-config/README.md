@@ -1,3 +1,4 @@
+
 # Configuration Parameters
 
 ## Anonymous Access
@@ -18,6 +19,7 @@
 ## Repository
 
 - `DIRIGIBLE_REPOSITORY_PROVIDER`: (local | database)
+- `DIRIGIBLE_REPOSITORY_DISABLE_CACHE`: (true | false)
 
 ### Database Repository
 
@@ -102,6 +104,8 @@
 	org.quartz.impl.jdbcjobstore.PointbaseDelegate
 	org.quartz.impl.jdbcjobstore.SybaseDelegate
 
+### Synchronizer
+- `DIRIGIBLE_SYNCHRONIZER_IGNORE_DEPENDENCIES`: (default: false)
 
 ### Runtime
 
@@ -111,16 +115,16 @@
 
 #### Jobs
 
-- `DIRIGIBLE_JOB_EXPRESSION_BPM`: (default: "0/30 * * * * ?")
-- `DIRIGIBLE_JOB_EXPRESSION_DATA_STRUCTURES`: (default: "0/20 * * * * ?")
+- `DIRIGIBLE_JOB_EXPRESSION_BPM`: (default: "0/50 * * * * ?")
+- `DIRIGIBLE_JOB_EXPRESSION_DATA_STRUCTURES`: (default: "0/25 * * * * ?")
 - `DIRIGIBLE_JOB_EXPRESSION_EXTENSIONS`: (default: "0/10 * * * * ?")
 - `DIRIGIBLE_JOB_EXPRESSION_JOBS`: (default: "0/15 * * * * ?")
-- `DIRIGIBLE_JOB_EXPRESSION_MESSAGING`: (default: "0/10 * * * * ?")
-- `DIRIGIBLE_JOB_EXPRESSION_MIGRATIONS`: (default: "0/50 * * * * ?")
-- `DIRIGIBLE_JOB_EXPRESSION_ODATA`: (default: "0/25 * * * * ?")
+- `DIRIGIBLE_JOB_EXPRESSION_MESSAGING`: (default: "0/25 * * * * ?")
+- `DIRIGIBLE_JOB_EXPRESSION_MIGRATIONS`: (default: "0/55 * * * * ?")
+- `DIRIGIBLE_JOB_EXPRESSION_ODATA`: (default: "0/45 * * * * ?")
 - `DIRIGIBLE_JOB_EXPRESSION_PUBLISHER`: (default: "0/5 * * * * ?")
 - `DIRIGIBLE_JOB_EXPRESSION_SECURITY`: (default: "0/10 * * * * ?")
-- `DIRIGIBLE_JOB_EXPRESSION_REGISTRY` : (default: "0/12 * * * * ?")
+- `DIRIGIBLE_JOB_EXPRESSION_REGISTRY` : (default: "0/35 * * * * ?")
 - `DIRIGIBLE_JOB_DEFAULT_TIMEOUT`: (default: 3 minutes)
 
 ### CMS
@@ -178,8 +182,17 @@
 
 ### JavaScript
 
-- `DIRIGIBLE_JAVASCRIPT_ENGINE_TYPE_DEFAULT`: rhino/nashorn/v8 (default is rhino)
-- `DIRIGBLE_JAVASCRIPT_GRAALVM_DEBUGGER_PORT`:	the GraalVM debugger port	(default is 8081 and 0.0.0.0:8081 in Docker environment)
+- `DIRIGIBLE_JAVASCRIPT_ENGINE_TYPE_DEFAULT`: graalvm/rhino/nashorn/v8 (default is graalvm)
+
+#### GraalVM
+
+- `DIRIGBLE_JAVASCRIPT_GRAALVM_DEBUGGER_PORT`: The GraalVM debugger port	(default is 8081 and 0.0.0.0:8081 in Docker environment)
+- `DIRIGBLE_JAVASCRIPT_GRAALVM_ALLOW_HOST_ACCESS`: Whether GraalVM can load classes form custom packages (default is true)
+- `DIRIGBLE_JAVASCRIPT_GRAALVM_ALLOW_CREATE_THREAD`: Whether GraalVM can create threads (default is true)
+- `DIRIGBLE_JAVASCRIPT_GRAALVM_ALLOW_CREATE_PROCESS`: Whether GraalVM can create processes (default is true)
+- `DIRIGBLE_JAVASCRIPT_GRAALVM_ALLOW_IO`: Whether GraalVM can make IO operations (default is true)
+- `DIRIGBLE_JAVASCRIPT_GRAALVM_COMPATIBILITY_MODE_NASHORN`: Whether GraalVM has enabled compatibility mode for Nashorn (default is true)
+- `DIRIGBLE_JAVASCRIPT_GRAALVM_COMPATIBILITY_MODE_MOZILLA`: Whether GraalVM has enabled compatibility mode for Mozilla (default is true)
 
  
 ## Operations
@@ -192,7 +205,7 @@
 
 ### Theme
 
-- `DIRIGIBLE_THEME_DEFAULT`: (default: ../Default)
+- `DIRIGIBLE_THEME_DEFAULT`: (default: `fiori`)
 
 ### OData
 

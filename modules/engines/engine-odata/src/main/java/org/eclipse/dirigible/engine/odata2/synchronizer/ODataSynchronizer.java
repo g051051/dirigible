@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.engine.odata2.synchronizer;
@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,18 +28,20 @@ import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.sql.DataSource;
 
 import org.apache.commons.io.IOUtils;
 import org.eclipse.dirigible.commons.api.module.StaticInjector;
 import org.eclipse.dirigible.core.scheduler.api.AbstractSynchronizer;
+import org.eclipse.dirigible.core.scheduler.api.SchedulerException;
 import org.eclipse.dirigible.core.scheduler.api.SynchronizationException;
 import org.eclipse.dirigible.engine.odata2.api.IODataCoreService;
 import org.eclipse.dirigible.engine.odata2.api.ODataException;
 import org.eclipse.dirigible.engine.odata2.definition.ODataDefinition;
+import org.eclipse.dirigible.engine.odata2.definition.ODataHandlerDefinition;
 import org.eclipse.dirigible.engine.odata2.definition.ODataMappingDefinition;
 import org.eclipse.dirigible.engine.odata2.definition.ODataSchemaDefinition;
 import org.eclipse.dirigible.engine.odata2.service.ODataCoreService;
+import org.eclipse.dirigible.engine.odata2.transformers.OData2ODataHTransformer;
 import org.eclipse.dirigible.engine.odata2.transformers.OData2ODataMTransformer;
 import org.eclipse.dirigible.engine.odata2.transformers.OData2ODataXTransformer;
 import org.eclipse.dirigible.repository.api.IRepository;
@@ -78,20 +79,70 @@ public class ODataSynchronizer extends AbstractSynchronizer {
 	private ODataCoreService odataCoreService;
 	
 	@Inject
-	private DataSource dataSource;
-
-	@Inject
 	private OData2ODataMTransformer odata2ODataMTransformer;
 
 	@Inject
 	private OData2ODataXTransformer odata2ODataXTransformer;
+	
+	@Inject
+	private OData2ODataHTransformer odata2ODataHTransformer;
+	
+	private final String SYNCHRONIZER_NAME = this.getClass().getCanonicalName();
+	
+	/*
+	 * (non-Javadoc)
+	 * @see org.eclipse.dirigible.core.scheduler.api.ISynchronizer#synchronize()
+	 */
+	@Override
+	public void synchronize() {
+		synchronized (ODataSynchronizer.class) {
+			if (beforeSynchronizing()) {
+				logger.trace("Synchronizing OData Schemas and Mappings...");
+				try {
+					if (isSynchronizerSuccessful("org.eclipse.dirigible.database.ds.synchronizer.DataStructuresSynchronizer")) {
+						startSynchronization(SYNCHRONIZER_NAME);
+						clearCache();
+						synchronizePredelivered();
+						synchronizeRegistry();
+						updateOData();
+						int immutableSchemasCount = SCHEMAS_PREDELIVERED.size();
+						int immutableMappingsCount = MAPPINGS_PREDELIVERED.size();
+						int immutableODataCount = ODATA_PREDELIVERED.size();
+						int mutableSchemasCount = SCHEMAS_SYNCHRONIZED.size();
+						int mutableMappingsCount = MAPPINGS_SYNCHRONIZED.size();
+						int mutableODataCount = ODATA_MODELS.size();
+						cleanup();
+						clearCache();
+						successfulSynchronization(SYNCHRONIZER_NAME, format("Immutable: [ Schemas: {0}, Mappings: {1}, OData: {2}], "
+								+ "Mutable: [Schemas: {3}, Mappings: {4}, OData: {5}]", 
+								immutableSchemasCount, immutableMappingsCount, immutableODataCount, mutableSchemasCount, mutableMappingsCount, mutableODataCount));
+					} else {
+						failedSynchronization(SYNCHRONIZER_NAME, "Skipped due to dependency: org.eclipse.dirigible.database.ds.synchronizer.DataStructuresSynchronizer");
+					}
+				} catch (Exception e) {
+					logger.error("Synchronizing process for OData Schemas and Mappings failed.", e);
+					try {
+						failedSynchronization(SYNCHRONIZER_NAME, e.getMessage());
+					} catch (SchedulerException e1) {
+						logger.error("Synchronizing process for OData files Schemas and Mappings failed in registering the state log.", e);
+					}
+				}
+				logger.trace("Done synchronizing OData Schemas and Mappings.");
+			}
+		}
+	}
 
 	/**
 	 * Force synchronization.
 	 */
 	public static final void forceSynchronization() {
-		ODataSynchronizer mappingsSynchronizer = StaticInjector.getInjector().getInstance(ODataSynchronizer.class);
-		mappingsSynchronizer.synchronize();
+		ODataSynchronizer synchronizer = StaticInjector.getInjector().getInstance(ODataSynchronizer.class);
+		synchronizer.setForcedSynchronization(true);
+		try {
+			synchronizer.synchronize();
+		} finally {
+			synchronizer.setForcedSynchronization(false);
+		}
 	}
 
 	/**
@@ -162,28 +213,6 @@ public class ODataSynchronizer extends AbstractSynchronizer {
 			if (in != null) {
 				in.close();
 			}
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.eclipse.dirigible.core.scheduler.api.ISynchronizer#synchronize()
-	 */
-	@Override
-	public void synchronize() {
-		synchronized (ODataSynchronizer.class) {
-			logger.trace("Synchronizing OData Schemas and Mappings...");
-			try {
-				clearCache();
-				synchronizePredelivered();
-				synchronizeRegistry();
-				updateOData();
-				cleanup();
-				clearCache();
-			} catch (Exception e) {
-				logger.error("Synchronizing process for OData Schemas and Mappings failed.", e);
-			}
-			logger.trace("Done synchronizing OData Schemas and Mappings.");
 		}
 	}
 
@@ -341,6 +370,7 @@ public class ODataSynchronizer extends AbstractSynchronizer {
 	@Override
 	protected void cleanup() throws SynchronizationException {
 		logger.trace("Cleaning up OData Schemas and Mappings...");
+		super.cleanup();
 
 		IRepository repository = getRepository();
 		try {
@@ -368,23 +398,15 @@ public class ODataSynchronizer extends AbstractSynchronizer {
 				}
 			}
 			
-			Connection connection = null;
-			try {
-				connection = dataSource.getConnection();
 				
-				List<ODataDefinition> odataModels = odataCoreService.getODatas();
-				for (ODataDefinition odataModel : odataModels) {
-					if (!ODATA_SYNCHRONIZED.contains(odataModel.getLocation())) {
-						odataCoreService.removeOData(odataModel.getLocation());
-						logger.warn("Cleaned up OData file with namespace [{}] from location: {}", odataModel.getNamespace(), odataModel.getLocation());
-					}
-				}
-			} finally {
-				if (connection != null) {
-					connection.close();
+			List<ODataDefinition> odataModels = odataCoreService.getODatas();
+			for (ODataDefinition odataModel : odataModels) {
+				if (!ODATA_SYNCHRONIZED.contains(odataModel.getLocation())) {
+					odataCoreService.removeOData(odataModel.getLocation());
+					logger.warn("Cleaned up OData file with namespace [{}] from location: {}", odataModel.getNamespace(), odataModel.getLocation());
 				}
 			}
-		} catch (ODataException | SQLException e) {
+		} catch (ODataException e) {
 			throw new SynchronizationException(e);
 		}
 
@@ -402,63 +424,56 @@ public class ODataSynchronizer extends AbstractSynchronizer {
 
 		List<String> errors = new ArrayList<String>();
 		try {
-			Connection connection = null;
-			try {
-				connection = dataSource.getConnection();
-				// topology sort of dependencies
-				List<String> sorted = new ArrayList<String>();
-//				List<String> external = new ArrayList<String>();
-				
-
-				if (sorted.isEmpty()) {
-					// something wrong happened with the sorting - probably cyclic dependencies
-					// we go for the back-up list and try to apply what would succeed
-					sorted.addAll(ODATA_MODELS.keySet());
-				}
-				
-				// drop odata in a reverse order
-				for (int i = sorted.size() - 1; i >= 0; i--) {
-					String dsName = sorted.get(i);
-					ODataDefinition model = ODATA_MODELS.get(dsName);
-					try {
-						// CLEAN UP LOGIC
-						odataCoreService.removeSchema(model.getLocation());
-						odataCoreService.removeContainer(model.getLocation());
-						odataCoreService.removeMappings(model.getLocation());
-					} catch (Exception e) {
-						logger.error(e.getMessage(), e);
-						errors.add(e.getMessage());
-					}
-				}
-				
-				// process tables in the proper order
-				for (String dsName : sorted) {
-					ODataDefinition model = ODATA_MODELS.get(dsName);
-					try {
-						// METADATA AND MAPPINGS GENERATION LOGIC
-						String[] odataxc = generateODataX(model);
-						String odatax = odataxc[0];
-						String odatac = odataxc[1];
-						odataCoreService.createSchema(model.getLocation(), odatax.getBytes());
-						odataCoreService.createContainer(model.getLocation(), odatac.getBytes());
-						
-						String[] odatams = generateODataMs(model);
-						int i=1;
-						for (String odatam : odatams) {
-							odataCoreService.createMapping(model.getLocation() + "#" + i++, odatam.getBytes());
-						}
-					} catch (Exception e) {
-						logger.error(e.getMessage(), e);
-						errors.add(e.getMessage());
-					}
-				}
-
-			} finally {
-				if (connection != null) {
-					connection.close();
+			
+			List<String> sorted = new ArrayList<String>();
+			
+			if (sorted.isEmpty()) {
+				sorted.addAll(ODATA_MODELS.keySet());
+			}
+			
+			for (int i = sorted.size() - 1; i >= 0; i--) {
+				String dsName = sorted.get(i);
+				ODataDefinition model = ODATA_MODELS.get(dsName);
+				try {
+					// CLEAN UP LOGIC
+					odataCoreService.removeSchema(model.getLocation());
+					odataCoreService.removeContainer(model.getLocation());
+					odataCoreService.removeMappings(model.getLocation());
+					odataCoreService.removeHandlers(model.getLocation());
+				} catch (Exception e) {
+					logger.error(e.getMessage(), e);
+					errors.add(e.getMessage());
 				}
 			}
-		} catch (SQLException e) {
+			
+			for (String dsName : sorted) {
+				ODataDefinition model = ODATA_MODELS.get(dsName);
+				try {
+					// METADATA AND MAPPINGS GENERATION LOGIC
+					String[] odataxc = generateODataX(model);
+					String odatax = odataxc[0];
+					String odatac = odataxc[1];
+					odataCoreService.createSchema(model.getLocation(), odatax.getBytes());
+					odataCoreService.createContainer(model.getLocation(), odatac.getBytes());
+					
+					String[] odatams = generateODataMs(model);
+					int i=1;
+					for (String odatam : odatams) {
+						odataCoreService.createMapping(model.getLocation() + "#" + i++, odatam.getBytes());
+					}
+					
+					List<ODataHandlerDefinition> odatahs = generateODataHs(model);
+					for (ODataHandlerDefinition odatah : odatahs) {
+						odataCoreService.createHandler(model.getLocation(), odatah.getNamespace(), odatah.getName(),
+								odatah.getMethod(), odatah.getType(), odatah.getHandler());
+					}
+				} catch (Exception e) {
+					logger.error(e.getMessage(), e);
+					errors.add(e.getMessage());
+				}
+			}
+			
+		} catch (Exception e) {
 			logger.error(concatenateListOfStrings(errors, "\n---\n"), e);
 		}
 		
@@ -472,6 +487,10 @@ public class ODataSynchronizer extends AbstractSynchronizer {
 	
 	private String[] generateODataMs(ODataDefinition model) throws SQLException {
 		return odata2ODataMTransformer.transform(model);
+	}
+	
+	private List<ODataHandlerDefinition> generateODataHs(ODataDefinition model) throws SQLException {
+		return odata2ODataHTransformer.transform(model);
 	}
 
 	/**

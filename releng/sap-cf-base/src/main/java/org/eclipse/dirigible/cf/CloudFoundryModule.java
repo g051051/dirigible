@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.cf;
@@ -17,13 +17,13 @@ import org.eclipse.dirigible.cf.utils.CloudFoundryUtils;
 import org.eclipse.dirigible.cf.utils.CloudFoundryUtils.HanaDbEnv;
 import org.eclipse.dirigible.cf.utils.CloudFoundryUtils.HanaSchemaEnv;
 import org.eclipse.dirigible.cf.utils.CloudFoundryUtils.PostgreDbEnv;
+import org.eclipse.dirigible.cf.utils.CloudFoundryUtils.PostgreHyperscalerDbEnv;
 import org.eclipse.dirigible.cf.utils.CloudFoundryUtils.XsuaaEnv;
 import org.eclipse.dirigible.cf.utils.CloudFoundryUtils.XsuaaEnv.XsuaaCredentialsEnv;
 import org.eclipse.dirigible.cms.api.ICmsProvider;
 import org.eclipse.dirigible.commons.api.context.InvalidStateException;
 import org.eclipse.dirigible.commons.api.module.AbstractDirigibleModule;
 import org.eclipse.dirigible.commons.config.Configuration;
-import org.eclipse.dirigible.core.scheduler.manager.SchedulerManager;
 import org.eclipse.dirigible.database.api.IDatabase;
 import org.eclipse.dirigible.database.ds.model.IDataStructureModel;
 import org.eclipse.dirigible.oauth.OAuthService;
@@ -57,13 +57,9 @@ public class CloudFoundryModule extends AbstractDirigibleModule {
 
 	@Override
 	protected void configure() {
+		Configuration.loadModuleConfig("/dirigible-cloud-foundry.properties");
 		configureOAuth();
-		boolean customPostgreDb = bindPostgreDb(CloudFoundryUtils.getPostgreDbEnv());
-		boolean customHanaDb = bindHanaDb(CloudFoundryUtils.getHanaDbEnv());
-		boolean customHanaSchema = bindHanaSchema(CloudFoundryUtils.getHanaSchemaEnv());
-		if (!customPostgreDb && !customHanaDb && !customHanaSchema) {
-			Configuration.set(IDatabase.DIRIGIBLE_DATABASE_PROVIDER, "local");
-		}
+		configureDatasource();
 	}
 
 	private void configureOAuth() {
@@ -94,6 +90,13 @@ public class CloudFoundryModule extends AbstractDirigibleModule {
 		Configuration.set(OAuthService.DIRIGIBLE_OAUTH_ISSUER, issuer);
 	}
 
+	private void configureDatasource() {
+		bindPostgreDb(CloudFoundryUtils.getPostgreDbEnv());
+		bindPostgreHyperscalerDb(CloudFoundryUtils.getPostgreHyperscalerDbEnv());
+		bindHanaDb(CloudFoundryUtils.getHanaDbEnv());
+		bindHanaSchema(CloudFoundryUtils.getHanaSchemaEnv());
+	}
+
 	private boolean bindPostgreDb(PostgreDbEnv env) {
 		if (env == null) {
 			return false;
@@ -112,6 +115,24 @@ public class CloudFoundryModule extends AbstractDirigibleModule {
 		return true;
 	}
 
+	private boolean bindPostgreHyperscalerDb(PostgreHyperscalerDbEnv env) {
+		if (env == null) {
+			return false;
+		}
+
+		String name = DATABASE_POSTGRE;
+		String url = env.getCredentials().getUrl();
+		String driver = DATABASE_POSTGRE_DRIVER;
+		String username = env.getCredentials().getUsername();
+		String password = env.getCredentials().getPassword();
+
+		setDatabaseProperties(name, url, driver, username, password);
+
+		Configuration.set(DIRIGIBLE_MESSAGING_USE_DEFAULT_DATABASE, "false");
+		Configuration.set(IDataStructureModel.DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE, "true");
+
+		return true;
+	}
 	private boolean bindHanaDb(HanaDbEnv env) {
 		if (env == null) {
 			return false;
@@ -208,6 +229,11 @@ public class CloudFoundryModule extends AbstractDirigibleModule {
 		}
 	}
 
+	private boolean haveCustomDatasourceConfiguration() {
+		return Configuration.get(IDatabase.DIRIGIBLE_DATABASE_PROVIDER, "").equals("custom")
+				&& !Configuration.get(IDatabase.DIRIGIBLE_DATABASE_CUSTOM_DATASOURCES, "").equals("")
+				&& !Configuration.get(IDatabase.DIRIGIBLE_DATABASE_DATASOURCE_NAME_DEFAULT, "").equals("");
+	}
 	@Override
 	public String getName() {
 		return MODULE_NAME;

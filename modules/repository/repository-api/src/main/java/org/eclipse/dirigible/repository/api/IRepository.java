@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.repository.api;
@@ -35,7 +35,13 @@ public interface IRepository
 	/** The Constant DIRIGIBLE_REPOSITORY_PROVIDER_DATABASE. */
 	public static final String DIRIGIBLE_REPOSITORY_PROVIDER_DATABASE = "database"; //$NON-NLS-1$
 	
+	/** The Constant DIRIGIBLE_REPOSITORY_DISABLE_CACHE. */
+	public static final String DIRIGIBLE_REPOSITORY_DISABLE_CACHE = "DIRIGIBLE_REPOSITORY_DISABLE_CACHE"; //$NON-NLS-1$
+	
 	/** Gets the internal named parameter value*/
 	public String getParameter(String key);
+	
+	/** Gets the most recent time when the repository gets changed */
+	public long getLastModified();
 
 }

@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.runtime.operations.service;
@@ -23,6 +23,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.codec.DecoderException;
@@ -78,7 +79,7 @@ public class LogsService extends AbstractRestService implements IRestService {
 	 */
 	@GET
 	@Path("")
-	@Produces({ "application/json" })
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response listLogs()
 			throws URISyntaxException, DecoderException, IOException {
 		String user = UserFacade.getName();
@@ -103,7 +104,7 @@ public class LogsService extends AbstractRestService implements IRestService {
 	 */
 	@GET
 	@Path("{file}")
-	@Produces({ "text/plain" })
+	@Produces(MediaType.TEXT_PLAIN)
 	public Response list(@PathParam("file") String file) throws URISyntaxException, DecoderException, IOException {
 		String user = UserFacade.getName();
 		if (user == null) {

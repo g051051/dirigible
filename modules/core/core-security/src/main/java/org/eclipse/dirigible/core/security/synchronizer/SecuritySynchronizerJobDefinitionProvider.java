@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.core.security.synchronizer;
@@ -38,7 +38,7 @@ public class SecuritySynchronizerJobDefinitionProvider implements IJobDefinition
 		jobDefinition.setGroup(ISchedulerCoreService.JOB_GROUP_INTERNAL);
 		jobDefinition.setClazz(SecuritySynchronizerJob.class.getCanonicalName());
 		jobDefinition.setDescription(SECURITY_ROLES_AND_ACCESS_SYNCHRONIZER_JOB);
-		String expression = Configuration.get(DIRIGIBLE_JOB_EXPRESSION_SECURITY, "0/10 * * * * ?");
+		String expression = Configuration.get(DIRIGIBLE_JOB_EXPRESSION_SECURITY, "0/20 * * * * ?");
 		jobDefinition.setExpression(expression);
 		jobDefinition.setSingleton(true);
 		return jobDefinition;

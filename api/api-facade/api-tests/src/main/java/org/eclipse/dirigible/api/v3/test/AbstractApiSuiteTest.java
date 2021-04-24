@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.api.v3.test;
@@ -313,7 +313,7 @@ public abstract class AbstractApiSuiteTest extends AbstractGuiceTest {
 		}
 	}
 
-	private void mockRequest(HttpServletRequest mockedRequest) {
+	protected void mockRequest(HttpServletRequest mockedRequest) {
 		when(mockedRequest.getMethod()).thenReturn("GET");
 		when(mockedRequest.getRemoteUser()).thenReturn("tester");
 		when(mockedRequest.getPathInfo()).thenReturn("/path");
@@ -332,15 +332,15 @@ public abstract class AbstractApiSuiteTest extends AbstractGuiceTest {
 		mockSession(mockedSession);
 	}
 	
-	private void mockSession(HttpSession mockedSession) {
+	protected void mockSession(HttpSession mockedSession) {
 		when(mockedSession.getAttributeNames()).thenReturn(Collections.enumeration(Arrays.asList("attr1")));
 	}
 
-	private void mockResponse(HttpServletResponse mockedResponse) {
+	protected void mockResponse(HttpServletResponse mockedResponse) {
 		when(mockedResponse.getHeaderNames()).thenReturn(Arrays.asList("header1", "header2"));
 	}
 
-	private Object runTest(IJavascriptEngineExecutor executor, IRepository repository, String testModule) throws IOException, ScriptingException {
+	protected Object runTest(IJavascriptEngineExecutor executor, IRepository repository, String testModule) throws IOException, ScriptingException {
 
 		try {
 			InputStream in = AbstractApiSuiteTest.class.getResourceAsStream(IRepositoryStructure.SEPARATOR + testModule);

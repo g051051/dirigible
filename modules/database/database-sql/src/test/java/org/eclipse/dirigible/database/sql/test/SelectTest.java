@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.database.sql.test;
@@ -14,10 +14,10 @@ package org.eclipse.dirigible.database.sql.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import org.eclipse.dirigible.commons.config.Configuration;
 import org.eclipse.dirigible.database.sql.SqlFactory;
 import org.junit.Test;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class SelectTest.
  */
@@ -368,6 +368,249 @@ public class SelectTest {
 		
 		assertNotNull(sql);
 		assertEquals("SELECT * FROM CUSTOMERS", sql);
+	}
+	
+	/**
+	 * Select star in case sensitive mode
+	 */
+	@Test
+	public void selectStarCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+				.select()
+				.column("*")
+				.from("CUSTOMERS")
+				.build();
+			
+			assertNotNull(sql);
+			assertEquals("SELECT * FROM \"CUSTOMERS\"", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
+	}
+	
+	/**
+	 * Select star in case sensitive mode
+	 */
+	@Test
+	public void selectStarAndColumnCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+				.select()
+				.column("*")
+				.column("FIRST_NAME")
+				.from("CUSTOMERS")
+				.build();
+			
+			assertNotNull(sql);
+			assertEquals("SELECT *, \"FIRST_NAME\" FROM \"CUSTOMERS\"", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
+	}
+	
+	/**
+	 * Select count in case sensitive mode
+	 */
+	@Test
+	public void selectCountCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+				.select()
+				.column("COUNT(*)")
+				.from("CUSTOMERS")
+				.build();
+			
+			assertNotNull(sql);
+			assertEquals("SELECT COUNT(*) FROM \"CUSTOMERS\"", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
+	}
+	
+	/**
+	 * Select column in case sensitive mode
+	 */
+	@Test
+	public void selectColumnCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+				.select()
+				.column("FIRST_NAME")
+				.from("CUSTOMERS")
+				.build();
+			
+			assertNotNull(sql);
+			assertEquals("SELECT \"FIRST_NAME\" FROM \"CUSTOMERS\"", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
+	}
+	
+	/**
+	 * Select column and where clause in case sensitive mode
+	 */
+	@Test
+	public void selectColumnWithWhereCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+				.select()
+				.column("FIRST_NAME")
+				.from("CUSTOMERS")
+				.where("PRICE > ?")
+				.build();
+			
+			assertNotNull(sql);
+			assertEquals("SELECT \"FIRST_NAME\" FROM \"CUSTOMERS\" WHERE (\"PRICE\" > ?)", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
+	}
+	
+	/**
+	 * Select column and where clause in case sensitive mode
+	 */
+	@Test
+	public void selectComplexColumnCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+				.select()
+				.column("POWER(PRICE, QTY)")
+				.from("CUSTOMERS")
+				.build();
+			
+			assertNotNull(sql);
+			assertEquals("SELECT POWER(\"PRICE\", \"QTY\") FROM \"CUSTOMERS\"", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
+	}
+	
+	/**
+	 * Select column and where clause in case sensitive mode
+	 */
+	@Test
+	public void selectComplexColumnsCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+				.select()
+				.column("(PRICE - QTY)")
+				.from("CUSTOMERS")
+				.build();
+			
+			assertNotNull(sql);
+			assertEquals("SELECT (\"PRICE\" - \"QTY\") FROM \"CUSTOMERS\"", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
+	}
+
+	/**
+	 * Select count and where clause is in case sensitive mode
+	 */
+	@Test
+	public void selectArtifactWithNamespaceAndSchemaNameCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+					.select()
+					.column("COUNT(*)")
+					.from("\"ShemaName\".\"projName.db::MySynonym\"")
+					.build();
+			assertNotNull(sql);
+			assertEquals("SELECT COUNT(*) FROM \"ShemaName\".\"projName.db::MySynonym\"", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
+	}
+
+	/**
+	 * Select count and where clause is in case sensitive mode
+	 */
+	@Test
+	public void selectArtifactWithNamespaceCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+					.select()
+					.column("COUNT(*)")
+					.from("projName::MySynonym")
+					.build();
+			assertNotNull(sql);
+			assertEquals("SELECT COUNT(*) FROM \"projName::MySynonym\"", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
+	}
+	
+	/**
+	 * Select column and where clause in case sensitive mode
+	 */
+	@Test
+	public void selectFunctionCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+				.select()
+				.column("COS(0.0) c")
+				.from("DUMMY")
+				.build();
+			
+			assertNotNull(sql);
+			assertEquals("SELECT COS(0.0) \"c\" FROM \"DUMMY\"", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
+	}
+	
+	/**
+	 * Select column and where clause in case sensitive mode
+	 */
+	@Test
+	public void selectColumnWithSpecialCharsCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+				.select()
+				.column("FIRST_NAME1$")
+				.from("CUSTOMERS")
+				.where("PRICE_BASIC1$ LIKE ?")
+				.build();
+			
+			assertNotNull(sql);
+			assertEquals("SELECT \"FIRST_NAME1$\" FROM \"CUSTOMERS\" WHERE (\"PRICE_BASIC1$\" LIKE ?)", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
+	}
+	
+	/**
+	 * Select column and where clause in case sensitive mode
+	 */
+	@Test
+	public void selectColumnWithSpecialCharsAndNumbersCaseSensitive() {
+		Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "true");
+		try {
+			String sql = SqlFactory.getDefault()
+				.select()
+				.column("FIRST_NAME1$")
+				.from("CUSTOMERS")
+				.where("PRICE_BASIC1$ LIKE ?")
+				.where("PRICE_BASIC2$ == 0")
+				.build();
+			
+			assertNotNull(sql);
+			assertEquals("SELECT \"FIRST_NAME1$\" FROM \"CUSTOMERS\" WHERE (\"PRICE_BASIC1$\" LIKE ?) AND (\"PRICE_BASIC2$\" == 0)", sql);
+		} finally {
+			Configuration.set("DIRIGIBLE_DATABASE_NAMES_CASE_SENSITIVE", "false");
+		}
 	}
 
 }

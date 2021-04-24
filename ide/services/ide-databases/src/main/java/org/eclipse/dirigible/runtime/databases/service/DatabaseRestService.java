@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.runtime.databases.service;
@@ -28,6 +28,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -157,22 +158,24 @@ public class DatabaseRestService extends AbstractRestService implements IRestSer
 	 *            the datasource name
 	 * @param schema
 	 * 			  the schema name
-	 * @param table
-	 * 			  the table name
+	 * @param artifact
+	 * 			  the artifact name
+	 * @param kind
+	 * 			  the artifact kind
 	 * @return the response
 	 * @throws SQLException
 	 *             the SQL exception
 	 */
 	@GET
-	@Path("{type}/{name}/{schema}/{table}")
+	@Path("{type}/{name}/{schema}/{artifact}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@ApiOperation("Returns the metadata of the given data source with {name} and {type}")
 	@ApiResponses({ @ApiResponse(code = 200, message = "Database Metadata", response = DatabaseMetadata.class),
 			@ApiResponse(code = 404, message = "Database Metadata for the requested database {type} does not exist") })
-	public Response describeTable(@ApiParam(value = "Database Type", required = true) @PathParam("type") String type,
+	public Response describeArtifact(@ApiParam(value = "Database Type", required = true) @PathParam("type") String type,
 			@ApiParam(value = "DataSource Name", required = true) @PathParam("name") String name,
 			@ApiParam(value = "Schema Name", required = true) @PathParam("schema") String schema,
-			@ApiParam(value = "Table Name", required = true) @PathParam("table") String table) throws SQLException {
+			@ApiParam(value = "Artifact Name", required = true) @PathParam("artifact") String artifact, @QueryParam("kind") String kind) throws SQLException {
 		String user = UserFacade.getName();
 		if (user == null) {
 			return createErrorResponseForbidden(NO_LOGGED_IN_USER);
@@ -183,10 +186,12 @@ public class DatabaseRestService extends AbstractRestService implements IRestSer
 			String error = format("DataSource {0} of Type {1} not known.", name, type);
 			return createErrorResponseNotFound(error);
 		}
-		String metadata = DatabaseMetadataHelper.getTableMetadataAsJson(dataSource, schema, table);
+		String metadata = processor.describeArtifact(dataSource, schema, artifact, kind);
 		return Response.ok().entity(metadata).build();
 
 	}
+
+	
 
 	/**
 	 * Execute query.
@@ -263,6 +268,45 @@ public class DatabaseRestService extends AbstractRestService implements IRestSer
 			return Response.ok().entity(result).type(MediaType.TEXT_PLAIN).build();
 		}
 		String result = processor.executeUpdate(type, name, new String(sql, StandardCharsets.UTF_8), true);
+		return Response.ok().entity(result).type(MediaType.APPLICATION_JSON).build();
+	}
+
+	/**
+	 * Execute procedure.
+	 *
+	 * @param type
+	 *            the type
+	 * @param name
+	 *            the name
+	 * @param sql
+	 *            the sql
+	 * @param request
+	 *            the request
+	 * @return the response
+	 */
+	@POST
+	@Path("{type}/{name}/procedure")
+	@ApiOperation("Executes an update operation on the datasource {name} and {type} and returns the result in a tabular format")
+	@ApiResponses({ @ApiResponse(code = 200, message = "Datasource updated successfully", response = String.class),
+			@ApiResponse(code = 404, message = "Datasource with {name} for the requested database {type} does not exist") })
+	public Response executeProcedure(@ApiParam(value = "Database Type", required = true) @PathParam("type") String type,
+			@ApiParam(value = "DataSource Name", required = true) @PathParam("name") String name, byte[] sql, @Context HttpServletRequest request) {
+		String user = UserFacade.getName();
+		if (user == null) {
+			return createErrorResponseForbidden(NO_LOGGED_IN_USER);
+		}
+
+		if (!processor.existsDatabase(type, name)) {
+			String error = format("Datasource {0} does not exist as {1}.", name, type);
+			return createErrorResponseNotFound(error);
+		}
+
+		String accept = request.getHeader("Accept");
+		if (ContentTypeHelper.TEXT_PLAIN.equals(accept)) {
+			String result = processor.executeProcedure(type, name, new String(sql, StandardCharsets.UTF_8), false);
+			return Response.ok().entity(result).type(MediaType.TEXT_PLAIN).build();
+		}
+		String result = processor.executeProcedure(type, name, new String(sql, StandardCharsets.UTF_8), true);
 		return Response.ok().entity(result).type(MediaType.APPLICATION_JSON).build();
 	}
 

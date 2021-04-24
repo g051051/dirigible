@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.eclipse.dirigible</groupId>
 		<artifactId>dirigible-parent</artifactId>
-		<version>5.7.0-SNAPSHOT</version>
+		<version>5.11.0-SNAPSHOT</version>
 		<relativePath>../../pom.xml</relativePath>
 	</parent>
 
@@ -13,63 +13,111 @@
 	<artifactId>dirigible-desktop-all</artifactId>
 	<packaging>jar</packaging>
 
-	<build>
-		<finalName>ROOT</finalName>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven.compiler.plugin.version}</version>
-				<configuration>
-					<source>${maven.compiler.source}</source>
-					<target>${maven.compiler.target}</target>
-					<debug>true</debug>
-					<debuglevel>lines,vars,source</debuglevel>
-				</configuration>
-			</plugin>
+	<profiles>
+		<profile>
+			<id>desktop-default</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+				<property>
+					<name>desktopDeploy</name>
+				</property>
+			</activation>
+			<build>
+				<finalName>ROOT</finalName>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-compiler-plugin</artifactId>
+						<version>${maven.compiler.plugin.version}</version>
+						<configuration>
+							<source>${maven.compiler.source}</source>
+							<target>${maven.compiler.target}</target>
+							<debug>true</debug>
+							<debuglevel>lines,vars,source</debuglevel>
+						</configuration>
+					</plugin>
 
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-war-plugin</artifactId>
-				<configuration>
-					<failOnMissingWebXml>true</failOnMissingWebXml>
-					<webXml>src/main/webapp/WEB-INF/web.xml</webXml>
-					<warName>ROOT</warName>
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-a-war</id>
-						<phase>compile</phase>
-						<goals>
-							<goal>war</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>pl.project13.maven</groupId>
-				<artifactId>git-commit-id-plugin</artifactId>
-				<version>${git-commit-id-plugin.version}</version>
-				<executions>
-					<execution>
-						<id>get-the-git-infos</id>
-						<goals>
-							<goal>revision</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<dotGitDirectory>../../.git</dotGitDirectory>
-				</configuration>
-			</plugin>
-		</plugins>
-		<resources>
-	        <resource>
-	          <directory>src/main/resources</directory>
-	          <filtering>true</filtering>
-	        </resource>
-	    </resources>
-	</build>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-war-plugin</artifactId>
+						<configuration>
+							<failOnMissingWebXml>true</failOnMissingWebXml>
+							<webXml>src/main/webapp/WEB-INF/web.xml</webXml>
+							<warName>ROOT</warName>
+						</configuration>
+						<executions>
+							<execution>
+								<id>make-a-war</id>
+								<phase>compile</phase>
+								<goals>
+									<goal>war</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>pl.project13.maven</groupId>
+						<artifactId>git-commit-id-plugin</artifactId>
+						<version>${git-commit-id-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>get-the-git-infos</id>
+								<goals>
+									<goal>revision</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<dotGitDirectory>../../.git</dotGitDirectory>
+						</configuration>
+					</plugin>
+				</plugins>
+				<resources>
+					<resource>
+					  <directory>src/main/resources</directory>
+					  <filtering>true</filtering>
+					</resource>
+				</resources>
+			</build>
+		</profile>
+
+		<profile>
+			<id>desktop-deploy</id>
+			<activation>
+				<property>
+					<name>desktopDeploy</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-resources-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>copy-war</id>
+								<phase>install</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${env.CATALINA_HOME}/webapps</outputDirectory>
+									<overwrite>true</overwrite>
+									<resources>
+										<resource>
+											<directory>/target</directory>
+											<includes>
+												<include>ROOT.war</include>
+											</includes>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 	<dependencies>
 	
@@ -97,57 +145,57 @@
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-commons-config</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 	
 		<!-- API -->
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-api</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- Repository -->
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-repository</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-repository-local</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-repository-master</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- Database -->
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-database</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-database-h2</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- Core Services -->
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-core</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- Services -->
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-services</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.eclipse.dirigible</groupId>
@@ -158,60 +206,60 @@
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-service-anonymous</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		 </dependency>
 
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-engine</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- CMS -->
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-cms-api</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-cms-internal</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 		
 		<!-- BPM -->
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-bpm</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- IDE Plugins -->
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-ide</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- Templates Plugins -->
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-templates</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- Resources Plugins -->
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-resources</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- External API modules -->
 		<dependency>
 		 	<groupId>org.eclipse.dirigible</groupId>
 		 	<artifactId>dirigible-ext</artifactId>
-		 	<version>5.7.0-SNAPSHOT</version>
+		 	<version>5.11.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- External -->

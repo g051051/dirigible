@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.cf.utils;
@@ -53,6 +53,12 @@ public class CloudFoundryUtils {
 		String envJson = EnvFacade.get(VCAP_SERVICES);
 		VcapServicesEnv vcapServicesEnv = GsonHelper.GSON.fromJson(envJson, VcapServicesEnv.class);
 		return vcapServicesEnv.getPostgreDbEnv() != null ? vcapServicesEnv.getPostgreDbEnv().get(0) : null;
+	}
+
+	public static PostgreHyperscalerDbEnv getPostgreHyperscalerDbEnv() {
+		String envJson = EnvFacade.get(VCAP_SERVICES);
+		VcapServicesEnv vcapServicesEnv = GsonHelper.GSON.fromJson(envJson, VcapServicesEnv.class);
+		return vcapServicesEnv.getPostgreHyperscalerDbEnv() != null ? vcapServicesEnv.getPostgreHyperscalerDbEnv().get(0) : null;
 	}
 
 	public static HanaDbEnv getHanaDbEnv() {
@@ -141,6 +147,9 @@ public class CloudFoundryUtils {
 		@SerializedName("postgresql")
 		private List<PostgreDbEnv> postgreDbEnv;
 
+		@SerializedName("postgresql-db")
+		private List<PostgreHyperscalerDbEnv> postgreHyperscalerDbEnv;
+
 		@SerializedName("hana-db")
 		private List<HanaDbEnv> hanaDbEnv;
 
@@ -157,6 +166,14 @@ public class CloudFoundryUtils {
 
 		public List<PostgreDbEnv> getPostgreDbEnv() {
 			return postgreDbEnv;
+		}
+
+		public List<PostgreHyperscalerDbEnv> getPostgreHyperscalerDbEnv() {
+			return postgreHyperscalerDbEnv;
+		}
+
+		public void setPostgreHyperscalerDbEnv(List<PostgreHyperscalerDbEnv> postgreHyperscalerDbEnv) {
+			this.postgreHyperscalerDbEnv = postgreHyperscalerDbEnv;
 		}
 
 		public void setPostgreDbEnv(List<PostgreDbEnv> postgreDbEnv) {
@@ -393,6 +410,78 @@ public class CloudFoundryUtils {
 			public void setPassword(String password) {
 				this.password = password;
 			}
+		}
+	}
+
+	public static class PostgreHyperscalerDbEnv {
+
+		private PostgreHyperscalerDbCredentialsEnv credentials;
+
+		public PostgreHyperscalerDbCredentialsEnv getCredentials() {
+			return credentials;
+		}
+
+		public void setCredentials(PostgreHyperscalerDbCredentialsEnv credentials) {
+			this.credentials = credentials;
+		}
+	}
+
+	public static class PostgreHyperscalerDbCredentialsEnv {
+
+		private static final String NO_SSL = "?sslfactory=org.postgresql.ssl.NonValidatingFactory&ssl=true";
+
+		private String username;
+
+		private String password;
+
+		private String hostname;
+
+		private String dbname;
+
+		private String port;
+
+		public String getUsername() {
+			return username;
+		}
+
+		public void setUsername(String username) {
+			this.username = username;
+		}
+
+		public String getPassword() {
+			return password;
+		}
+
+		public void setPassword(String password) {
+			this.password = password;
+		}
+
+		public String getHostname() {
+			return hostname;
+		}
+
+		public void setHostname(String hostname) {
+			this.hostname = hostname;
+		}
+
+		public String getDbname() {
+			return dbname;
+		}
+
+		public void setDbname(String dbname) {
+			this.dbname = dbname;
+		}
+
+		public String getPort() {
+			return port;
+		}
+
+		public void setPort(String port) {
+			this.port = port;
+		}
+
+		public String getUrl() {
+			return "jdbc:postgresql://" + getHostname() + ":" + getPort() + "/" + getDbname() + NO_SSL;
 		}
 	}
 

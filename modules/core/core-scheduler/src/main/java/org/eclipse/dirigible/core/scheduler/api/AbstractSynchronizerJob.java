@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.core.scheduler.api;
@@ -45,16 +45,16 @@ public abstract class AbstractSynchronizerJob implements Job {
 	@Override
 	public void execute(JobExecutionContext context) throws JobExecutionException {
 		final long startTime = System.currentTimeMillis();
-		logger.info("Synchronizer [{}] started execution at: {}...", getName(), new Date(startTime));
+		logger.trace("Synchronizer [{}] started execution at: {}...", getName(), new Date(startTime));
 		try {
 	      TimeLimited.runWithTimeout(new Runnable() {
 	        @Override
 	        public void run() {
 	        	getSynchronizer().synchronize();
 	      		HealthStatus.getInstance().getJobs().setStatus(getName(), JobStatus.Succeeded); // context.getJobDetail().getKey().getName()
-	      		logger.info("Synchronizer [{}] execution passed successfully for {} ms...", getName(), System.currentTimeMillis() - startTime);
+	      		logger.trace("Synchronizer [{}] execution passed successfully for {} ms...", getName(), System.currentTimeMillis() - startTime);
 	        }
-	      }, TimeLimited.getTimeout(), TimeUnit.MINUTES);
+	      }, getTimeout(), getTimeoutUnit());
 	    } catch (TimeoutException e) {
 	    	logger.error("Synchronizer [{}] got timeout during execution at: {}", getName(), new Date(System.currentTimeMillis()));
 	    	logger.error(e.getMessage(), e);
@@ -64,7 +64,15 @@ public abstract class AbstractSynchronizerJob implements Job {
 	    	logger.error(e.getMessage(), e);
 	    	HealthStatus.getInstance().getJobs().setStatus(getName(), JobStatus.Failed);
 	    }
-		logger.info("Synchronizer [{}] ended execution for {} ms...", getName(), System.currentTimeMillis() - startTime);
+		logger.trace("Synchronizer [{}] ended execution for {} ms...", getName(), System.currentTimeMillis() - startTime);
+	}
+
+	protected int getTimeout() {
+		return TimeLimited.getTimeout();
+	}
+
+	protected TimeUnit getTimeoutUnit() {
+		return TimeUnit.MINUTES;
 	}
 
 	/**

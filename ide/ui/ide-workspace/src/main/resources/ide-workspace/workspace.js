@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 /**
@@ -152,27 +152,28 @@ WorkspaceService.prototype.createFolder = function(type){
 	});
 };
 
-WorkspaceService.prototype.createFile = function(name, path, node){
+WorkspaceService.prototype.createFile = function (name, path, node) {
 	var isDirectory = node.type === 'folder';
-	var url = new UriBuilder().path((this.workspacesServiceUrl+path).split('/')).path(name).build();
-	if(isDirectory)
-		url+="/";
+	var url = new UriBuilder().path((this.workspacesServiceUrl + path).split('/')).path(name).build();
+	if (isDirectory)
+		url += "/";
 	if (!node.data)
 		node.data = '';
-	return this.$http.post(url, JSON.stringify(node.data))
-			.then(function(response){
-				var filePath = response.headers('location');
-				return this.$http.get(filePath, {headers: { 'describe': 'application/json'}})
-					.then(function(response){ return response.data;});
-			}.bind(this))
-			.catch(function(response) {
-				var msg;
-				if(response.data && response.data.error)
-					msg = response.data.error;
-				else 
-					msg = response.data || response.statusText || 'Unspecified server error. HTTP Code ['+response.status+']';
-				throw msg;
-			});	
+	return this.$http.post(url, JSON.stringify(node.data), { headers: { 'Dirigible-Editor': 'Workspace' } })
+		.then(function (response) {
+			var filePath = response.headers('location');
+			filePath = filePath.substring(filePath.indexOf("/services"))
+			return this.$http.get(filePath, { headers: { 'describe': 'application/json' } })
+				.then(function (response) { return response.data; });
+		}.bind(this))
+		.catch(function (response) {
+			var msg;
+			if (response.data && response.data.error)
+				msg = response.data.error;
+			else
+				msg = response.data || response.statusText || 'Unspecified server error. HTTP Code [' + response.status + ']';
+			throw msg;
+		});
 };
 WorkspaceService.prototype.uploadFile = function(name, path, node){
 	var isDirectory = node.type === 'folder';
@@ -193,6 +194,7 @@ WorkspaceService.prototype.uploadFile = function(name, path, node){
 	return this.$http(req)
 			.then(function(response){
 				var filePath = response.headers('location');
+				filePath = filePath.substring(filePath.indexOf("/services"));
 				return this.$http.get(filePath, {headers: { 'describe': 'application/json'}})
 					.then(function(response){ return response.data;});
 			}.bind(this))
@@ -843,7 +845,8 @@ angular.module('workspace', ['workspace.config', 'ideUiCore', 'ngAnimate', 'ngSa
     
     
     
-    var specificFileTemplates = JSON.parse(templates);
+	var priorityFileTemplates = JSON.parse(templates).filter(e => e.order !== undefined).sort((a, b) => a.order - b.order);
+    var specificFileTemplates = JSON.parse(templates).filter(e => e.order === undefined);
 
 	return {
 		'core' : {
@@ -963,6 +966,26 @@ angular.module('workspace', ['workspace.config', 'ideUiCore', 'ngAnimate', 'ngSa
 				}
 				
 				if (ctxmenu.create) {
+					for (let i = 0; i < priorityFileTemplates.length; i ++) {
+						let fileTemplate = priorityFileTemplates[i];
+						ctxmenu.create.submenu[fileTemplate.name] = {
+							"separator_after"	: (i + 1 === priorityFileTemplates.length),
+							"label"				: fileTemplate.label,
+							"action"			: function (wnd, data) {
+								var tree = $.jstree.reference(data.reference);
+								var parentNode = tree.get_node(data.reference);
+								var fileNode = {
+									type: 'file'
+								};
+								fileNode.text = 'file.'+fileTemplate.extension;
+								fileNode.data = fileTemplate.data;
+								tree.create_node(parentNode, fileNode, "last", function (new_node) {
+									tree.edit(new_node);
+								});
+							}.bind(self, this)
+						};
+					}
+
 					specificFileTemplates.forEach(function(fileTemplate){
 						ctxmenu.create.submenu[fileTemplate.name] = {
 								"label"				: fileTemplate.label,

@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.database.api.metadata;
@@ -52,6 +52,8 @@ public class TableMetadata {
 	 *            the catalog name
 	 * @param schemaName
 	 *            the schema name
+	 * @param deep
+	 *            whether to populate also the columns
 	 * @throws SQLException
 	 *             the SQL exception
 	 */
@@ -67,15 +69,15 @@ public class TableMetadata {
 		if (deep) {
 			DatabaseMetadataHelper.iterateTableDefinition(connection, catalogName, schemaName, name, new ColumnsIteratorCallback() {
 				@Override
-				public void onColumn(String columnName, String columnType, String columnSize, String isNullable, String isKey) {
+				public void onColumn(String columnName, String columnType, String columnSize, boolean isNullable, boolean isKey) {
 					columns.add(new ColumnMetadata(columnName, columnType, columnSize != null ? Integer.parseInt(columnSize) : 0,
-							Boolean.parseBoolean(isNullable), Boolean.parseBoolean(isKey)));
+							isNullable, isKey));
 				}
 			}, new IndicesIteratorCallback() {
 				@Override
-				public void onIndex(String indexName, String indexType, String columnName, String isNonUnique, String indexQualifier,
+				public void onIndex(String indexName, String indexType, String columnName, boolean isNonUnique, String indexQualifier,
 						String ordinalPosition, String sortOrder, String cardinality, String pagesIndex, String filterCondition) {
-					indices.add(new IndexMetadata(indexName, indexType, columnName, Boolean.parseBoolean(isNonUnique), indexQualifier, ordinalPosition,
+					indices.add(new IndexMetadata(indexName, indexType, columnName, isNonUnique, indexQualifier, ordinalPosition,
 							sortOrder, cardinality != null ? Integer.parseInt(cardinality) : 0, pagesIndex != null ? Integer.parseInt(pagesIndex) : 0,
 							filterCondition));
 				}

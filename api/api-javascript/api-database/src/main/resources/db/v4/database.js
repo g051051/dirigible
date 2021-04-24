@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 /**
@@ -168,6 +168,17 @@ function PreparedStatement(internalStatement) {
 
 	this.close = function() {
 		this.native.close();
+	};
+
+	this.getResultSet = function() {
+		var resultset = new ResultSet();
+		var native = this.native.getResultSet();
+		resultset.native = native;
+		return resultset;
+	};
+
+	this.execute = function() {
+		return this.native.execute();
 	};
 
 	this.executeQuery = function() {
@@ -350,7 +361,7 @@ function PreparedStatement(internalStatement) {
     };
 
     this.getMoreResults = function() {
-        return this.native.getMoreResults();
+		return this.native.getMoreResults();
     };
 
     this.getParameterMetaData = function() {
@@ -376,6 +387,24 @@ function PreparedStatement(internalStatement) {
 }
 
 function CallableStatement() {
+
+	this.getResultSet = function() {
+		var resultset = new ResultSet();
+		var native = this.native.getResultSet();
+		resultset.native = native;
+		return resultset;
+	};
+
+	this.executeQuery = function() {
+		var resultset = new ResultSet();
+		var native = this.native.executeQuery();
+		resultset.native = native;
+		return resultset;
+	};
+
+	this.executeUpdate = function() {
+		return this.native.executeUpdate();
+	};
 
 	this.registerOutParameter = function(parameterIndex, sqlType) {
 		this.native.registerOutParameter(parameterIndex, sqlType);
@@ -601,7 +630,7 @@ function CallableStatement() {
 	};
 
 	this.getMoreResults = function() {
-    	return this.native.getMoreResults();
+		return this.native.getMoreResults();
     };
 
     this.getParameterMetaData = function() {
@@ -625,6 +654,13 @@ function CallableStatement() {
  * ResultSet object
  */
 function ResultSet(internalResultset) {
+
+	this.toJson = function(limited) {
+		if (limited === undefined || limited === false) {
+			limited = false;
+		}
+		return org.eclipse.dirigible.databases.helpers.DatabaseResultSetHelper.toJson(this.native, limited);
+	};
 
 	this.close = function() {
 		this.native.close();

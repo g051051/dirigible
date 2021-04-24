@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 /**
@@ -20,6 +20,7 @@ exports.isValid = function() {
 };
 
 exports.print = function(text) {
+	if (!text) text += "";
 	var out = this.getOutputStream().native;
 	var writer = new java.io.OutputStreamWriter(out, java.nio.charset.StandardCharsets.UTF_8);
 	writer.write(text);
@@ -28,6 +29,7 @@ exports.print = function(text) {
 };
 
 exports.println = function(text) {
+	if (!text) text = +"";
 	var out = this.getOutputStream().native;
 	var writer = new java.io.OutputStreamWriter(out, java.nio.charset.StandardCharsets.UTF_8);
 	writer.write(text);
@@ -37,6 +39,7 @@ exports.println = function(text) {
 };
 
 exports.write = function(bytes) {
+	if (!bytes) bytes += "";
 	org.eclipse.dirigible.api.v3.http.HttpResponseFacade.write(bytes);
 };
 

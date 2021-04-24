@@ -55,7 +55,7 @@
 	<description>Dirigible Parent</description>
 	<groupId>org.eclipse.dirigible</groupId>
 	<artifactId>dirigible-parent</artifactId>
-	<version>5.7.0-SNAPSHOT</version>
+	<version>5.11.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<inceptionYear>2010</inceptionYear>
@@ -348,6 +348,13 @@
 								<goals>
 									<goal>sign</goal>
 								</goals>
+								<configuration>
+									<!-- Prevent gpg from using pinentry programs -->
+									<gpgArguments>
+										<arg>--pinentry-mode</arg>
+										<arg>loopback</arg>
+									</gpgArguments>
+								</configuration>
 							</execution>
 						</executions>
 					</plugin>
@@ -484,6 +491,17 @@
 			<groupId>org.apache.cxf</groupId>
 			<artifactId>cxf-rt-rs-service-description-swagger</artifactId>
 			<version>${cxf.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>jackson-databind</artifactId>
+					<groupId>com.fasterxml.jackson.core</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.10.5.1</version>
 		</dependency>
 
 		<!-- Java 11 Dependencies -->
@@ -556,7 +574,7 @@
 		<commons.io>2.6</commons.io>
 		<commons.codec>1.10</commons.codec>
 		<commons.lang3>3.9</commons.lang3>
-		<cxf.version>3.3.4</cxf.version>
+		<cxf.version>3.4.2</cxf.version>
 		<gson.version>2.2.4</gson.version>
 		<guice.version>4.2.2</guice.version>
 		<mockito.version>2.23.0</mockito.version>
@@ -607,6 +625,7 @@
 		<module>modules/cms</module>
 		<module>modules/bpm</module>
 		<module>modules/security</module>
+		<module>modules/odata</module>
 
 		<module>groups/runtime-all</module>
 		<module>groups/runtime-javascript</module>
