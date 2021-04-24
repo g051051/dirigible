@@ -1,18 +1,22 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.database.sql;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.eclipse.dirigible.database.sql.builders.AlterBranchingBuilder;
 import org.eclipse.dirigible.database.sql.builders.CreateBranchingBuilder;
@@ -46,6 +50,151 @@ import org.eclipse.dirigible.database.sql.builders.sequence.NextValueSequenceBui
  */
 public interface ISqlDialect<SELECT extends SelectBuilder, INSERT extends InsertBuilder, UPDATE extends UpdateBuilder, DELETE extends DeleteBuilder, CREATE extends CreateBranchingBuilder, ALTER extends AlterBranchingBuilder, DROP extends DropBranchingBuilder, NEXT extends NextValueSequenceBuilder, LAST extends LastValueIdentityBuilder>
 		extends ISqlFactory<SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, NEXT, LAST>, ISqlKeywords {
+	
+	public static final Set FUNCTIONS = Collections.synchronizedSet(new HashSet<String>(Arrays.asList(new String[] {
+			"ASCII",
+			"CHAR_LENGTH",
+			"CHARACTER_LENGTH",
+			"CONCAT",
+			"CONCAT_WS",
+			"FIELD",
+			"FIND_IN_SET",
+			"FORMAT",
+			"INSERT",
+			"INSTR",
+			"LCASE",
+			"LEFT",
+			"LENGTH",
+			"LOCATE",
+			"LOWER",
+			"LPAD",
+			"LTRIM",
+			"MID",
+			"POSITION",
+			"REPEAT",
+			"REPLACE",
+			"REVERSE",
+			"RIGHT",
+			"RPAD",
+			"RTRIM",
+			"SPACE",
+			"STRCMP",
+			"SUBSTR",
+			"SUBSTRING",
+			"SUBSTRING_INDEX",
+			"TRIM",
+			"UCASE",
+			"UPPER",
+			
+			"ABS",
+			"ACOS",
+			"ASIN",
+			"ATAN",
+			"ATAN2",
+			"AVG",
+			"CEIL",
+			"CEILING",
+			"COS",
+			"COT",
+			"COUNT",
+			"DEGREES",
+			"DIV",
+			"EXP",
+			"FLOOR",
+			"GREATEST",
+			"LEAST",
+			"LN",
+			"LOG",
+			"LOG10",
+			"LOG2",
+			"MAX",
+			"MIN",
+			"MOD",
+			"PI",
+			"POW",
+			"POWER",
+			"RADIANS",
+			"RAND",
+			"ROUND",
+			"SIGN",
+			"SIN",
+			"SQRT",
+			"SUM",
+			"TAN",
+			"TRUNCATE",
+			
+			"ADDDATE",
+			"ADDTIME",
+			"CURDATE",
+			"CURRENT_DATE",
+			"CURRENT_TIME",
+			"CURRENT_TIMESTAMP",
+			"CURTIME",
+			"DATE",
+			"DATEDIFF",
+			"DATE_ADD",
+			"DATE_FORMAT",
+			"DATE_SUB",
+			"DAY",
+			"DAYNAME",
+			"DAYOFMONTH",
+			"DAYOFWEEK",
+			"DAYOFYEAR",
+			"EXTRACT",
+			"FROM_DAYS",
+			"HOUR",
+			"LAST_DAY",
+			"LOCALTIME",
+			"LOCALTIMESTAMP",
+			"MAKEDATE",
+			"MAKETIME",
+			"MICROSECOND",
+			"MINUTE",
+			"MONTH",
+			"MONTHNAME",
+			"NOW",
+			"PERIOD_ADD",
+			"PERIOD_DIFF",
+			"QUARTER",
+			"SECOND",
+			"SEC_TO_TIME",
+			"STR_TO_DATE",
+			"SUBDATE",
+			"SUBTIME",
+			"SYSDATE",
+			"TIME",
+			"TIME_FORMAT",
+			"TIME_TO_SEC",
+			"TIMEDIFF",
+			"TIMESTAMP",
+			"TO_DAYS",
+			"WEEK",
+			"WEEKDAY",
+			"WEEKOFYEAR",
+			"YEAR",
+			"YEARWEEK",
+			
+			"BIN",
+			"BINARY",
+			"CASE",
+			"CAST",
+			"COALESCE",
+			"CONNECTION_ID",
+			"CONV",
+			"CONVERT",
+			"CURRENT_USER",
+			"DATABASE",
+			"IF",
+			"IFNULL",
+			"ISNULL",
+			"LAST_INSERT_ID",
+			"NULLIF",
+			"SESSION_USER",
+			"SYSTEM_USER",
+			"USER",
+			"VERSION"
+			
+			})));
 
 	/**
 	 * Default implementation returns the direct toString() conversion. It may
@@ -102,6 +251,22 @@ public interface ISqlDialect<SELECT extends SelectBuilder, INSERT extends Insert
 	 */
 	@Override
 	public boolean exists(Connection connection, String table) throws SQLException;
+	
+	/**
+	 * Check existence of an artifacts.
+	 *
+	 * @param connection
+	 *            the current connection
+	 * @param name
+	 *            the artifact name
+	 * @param type
+	 *            the artifact type
+	 * @return true if the table exists and false otherwise
+	 * @throws SQLException
+	 *             the SQL exception
+	 */
+	@Override
+	public boolean exists(Connection connection, String name, int type) throws SQLException;
 
 	/**
 	 * Returns the count of rows in the given table.
@@ -166,7 +331,7 @@ public interface ISqlDialect<SELECT extends SelectBuilder, INSERT extends Insert
 	/**
 	 * Checks if the database is capable to create and use Sequences.
 	 *
-	 * @return true if the feature is supported , false otherwise
+	 * @return true if the feature is supported, false otherwise
 	 */
 	public boolean isSequenceSupported();
 	
@@ -181,7 +346,14 @@ public interface ISqlDialect<SELECT extends SelectBuilder, INSERT extends Insert
 	/**
 	 * Checks if the database is capable to create and use Synonyms.
 	 *
-	 * @return true if the feature is supported , false otherwise
+	 * @return true if the feature is supported, false otherwise
 	 */
 	public boolean isSynonymSupported();
+	
+	/**
+	 * Returns the function names
+	 *
+	 * @return the list of functions names
+	 */
+	public Set<String> getFunctionsNames();
 }

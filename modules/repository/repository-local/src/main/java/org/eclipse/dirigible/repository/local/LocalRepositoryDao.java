@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.repository.local;
@@ -21,6 +21,7 @@ import java.util.List;
 import org.eclipse.dirigible.api.v3.security.UserFacade;
 import org.eclipse.dirigible.commons.api.helpers.ContentTypeHelper;
 import org.eclipse.dirigible.commons.api.helpers.FileSystemUtils;
+import org.eclipse.dirigible.repository.api.RepositoryCache;
 import org.eclipse.dirigible.repository.api.RepositoryWriteException;
 import org.eclipse.dirigible.repository.fs.FileSystemRepository;
 import org.slf4j.Logger;
@@ -50,6 +51,9 @@ public class LocalRepositoryDao {
 	static final int OBJECT_TYPE_BINARY = 2;
 
 	private FileSystemRepository repository;
+	
+	private final RepositoryCache cache = new RepositoryCache();
+	
 
 	/**
 	 * Instantiates a new local repository dao.
@@ -88,6 +92,8 @@ public class LocalRepositoryDao {
 		try {
 			String workspacePath = LocalWorkspaceMapper.getMappedName(getRepository(), path);
 			FileSystemUtils.saveFile(workspacePath, content);
+			cache.put(path, content);
+			((LocalRepository) getRepository()).setLastModified(System.currentTimeMillis());
 		} catch (IOException e) {
 			throw new LocalRepositoryException(e);
 		}
@@ -114,6 +120,8 @@ public class LocalRepositoryDao {
 		try {
 			String workspacePath = LocalWorkspaceMapper.getMappedName(getRepository(), localFile.getPath());
 			FileSystemUtils.saveFile(workspacePath, content);
+			cache.put(localFile.getPath(), content);
+			((LocalRepository) getRepository()).setLastModified(System.currentTimeMillis());
 		} catch (IOException e) {
 			throw new LocalRepositoryException(e);
 		}
@@ -129,7 +137,12 @@ public class LocalRepositoryDao {
 	public byte[] getFileContent(LocalFile localFile) {
 		try {
 			String workspacePath = LocalWorkspaceMapper.getMappedName(getRepository(), localFile.getPath());
-			return FileSystemUtils.loadFile(workspacePath);
+			byte[] content = cache.get(localFile.getPath());
+			if (content == null) {
+				content = FileSystemUtils.loadFile(workspacePath);
+				cache.put(localFile.getPath(), content);
+			}
+			return content;
 		} catch (IOException e) {
 			throw new LocalRepositoryException(e);
 		}
@@ -148,6 +161,8 @@ public class LocalRepositoryDao {
 			String workspacePathOld = LocalWorkspaceMapper.getMappedName(getRepository(), path);
 			String workspacePathNew = LocalWorkspaceMapper.getMappedName(getRepository(), newPath);
 			FileSystemUtils.moveFile(workspacePathOld, workspacePathNew);
+			cache.remove(path);
+			((LocalRepository) getRepository()).setLastModified(System.currentTimeMillis());
 		} catch (IOException e) {
 			throw new LocalRepositoryException(e);
 		}
@@ -166,6 +181,8 @@ public class LocalRepositoryDao {
 			String workspacePathOld = LocalWorkspaceMapper.getMappedName(getRepository(), path);
 			String workspacePathNew = LocalWorkspaceMapper.getMappedName(getRepository(), newPath);
 			FileSystemUtils.copyFile(workspacePathOld, workspacePathNew);
+			cache.remove(newPath);
+			((LocalRepository) getRepository()).setLastModified(System.currentTimeMillis());
 		} catch (IOException e) {
 			throw new LocalRepositoryException(e);
 		}
@@ -181,6 +198,8 @@ public class LocalRepositoryDao {
 		try {
 			String workspacePath = LocalWorkspaceMapper.getMappedName(getRepository(), path);
 			FileSystemUtils.removeFile(workspacePath);
+			cache.remove(path);
+			((LocalRepository) getRepository()).setLastModified(System.currentTimeMillis());
 		} catch (IOException e) {
 			throw new LocalRepositoryException(e);
 		}
@@ -196,6 +215,8 @@ public class LocalRepositoryDao {
 		try {
 			String workspacePath = LocalWorkspaceMapper.getMappedName(getRepository(), path);
 			FileSystemUtils.removeFile(workspacePath);
+			cache.clear();
+			((LocalRepository) getRepository()).setLastModified(System.currentTimeMillis());
 		} catch (IOException e) {
 			throw new LocalRepositoryException(e);
 		}
@@ -211,6 +232,7 @@ public class LocalRepositoryDao {
 		try {
 			String workspacePath = LocalWorkspaceMapper.getMappedName(getRepository(), normalizePath);
 			FileSystemUtils.createFolder(workspacePath);
+			((LocalRepository) getRepository()).setLastModified(System.currentTimeMillis());
 		} catch (RepositoryWriteException e) {
 			throw new LocalRepositoryException(e);
 		}
@@ -229,6 +251,8 @@ public class LocalRepositoryDao {
 			String workspacePathOld = LocalWorkspaceMapper.getMappedName(getRepository(), path);
 			String workspacePathNew = LocalWorkspaceMapper.getMappedName(getRepository(), newPath);
 			FileSystemUtils.moveFile(workspacePathOld, workspacePathNew);
+			cache.clear();
+			((LocalRepository) getRepository()).setLastModified(System.currentTimeMillis());
 		} catch (IOException e) {
 			throw new LocalRepositoryException(e);
 		}
@@ -248,6 +272,8 @@ public class LocalRepositoryDao {
 			String workspacePathOld = LocalWorkspaceMapper.getMappedName(getRepository(), path);
 			String workspacePathNew = LocalWorkspaceMapper.getMappedName(getRepository(), newPath);
 			FileSystemUtils.copyFolder(workspacePathOld, workspacePathNew);
+			cache.clear();
+			((LocalRepository) getRepository()).setLastModified(System.currentTimeMillis());
 		} catch (IOException e) {
 			throw new LocalRepositoryException(e);
 		}
@@ -325,6 +351,28 @@ public class LocalRepositoryDao {
 	}
 	
 	/**
+	 * Check whether the file exists
+	 * 
+	 * @param path the path
+	 * @return true if exists
+	 */
+	public boolean fileExists(String path) {
+		String workspacePath = LocalWorkspaceMapper.getMappedName(getRepository(), path);
+		return FileSystemUtils.fileExists(workspacePath);
+	}
+	
+	/**
+	 * Check whether the directory exists
+	 * 
+	 * @param path the path
+	 * @return true if exists
+	 */
+	public boolean directoryExists(String path) {
+		String workspacePath = LocalWorkspaceMapper.getMappedName(getRepository(), path);
+		return FileSystemUtils.directoryExists(workspacePath);
+	}
+	
+	/**
 	 * Gets the user.
 	 *
 	 * @return the user
@@ -332,5 +380,5 @@ public class LocalRepositoryDao {
 	private String getUser() {
 		return UserFacade.getName();
 	}
-
+	
 }

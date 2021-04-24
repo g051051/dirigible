@@ -1,32 +1,26 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 package org.eclipse.dirigible.core.scheduler.quartz;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import org.apache.commons.io.IOUtils;
 import org.eclipse.dirigible.commons.config.Configuration;
 import org.eclipse.dirigible.core.scheduler.manager.SchedulerManager;
 import org.eclipse.dirigible.database.api.DatabaseModule;
-import org.eclipse.dirigible.database.ds.model.DataStructureModelFactory;
-import org.eclipse.dirigible.database.ds.model.DataStructureTableModel;
-import org.eclipse.dirigible.database.ds.model.processors.TableCreateProcessor;
 import org.eclipse.dirigible.database.sql.SqlFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +28,7 @@ import org.slf4j.LoggerFactory;
 /**
  * The Quartz Database Layout Initializer.
  */
-public class QuartzDatabaseLayoutInitializer {
+public class QuartzDatabaseLayoutInitializer extends AbstractDatabaseLayoutInitializer {
 
 	private static final Logger logger = LoggerFactory.getLogger(QuartzDatabaseLayoutInitializer.class);
 
@@ -102,31 +96,6 @@ public class QuartzDatabaseLayoutInitializer {
 		} finally {
 			if (connection != null) {
 				connection.close();
-			}
-		}
-	}
-
-	/**
-	 * Creates a table.
-	 *
-	 * @param connection
-	 *            the connection
-	 * @param model
-	 *            the model
-	 * @throws IOException
-	 *             Signals that an I/O exception has occurred.
-	 * @throws SQLException
-	 *             the SQL exception
-	 */
-	private void createTable(Connection connection, String model) throws IOException, SQLException {
-		InputStream in = QuartzDatabaseLayoutInitializer.class.getResourceAsStream(model);
-		try {
-			String tableFile = IOUtils.toString(in, StandardCharsets.UTF_8);
-			DataStructureTableModel tableModel = DataStructureModelFactory.parseTable(tableFile);
-			TableCreateProcessor.execute(connection, tableModel);
-		} finally {
-			if (in != null) {
-				in.close();
 			}
 		}
 	}

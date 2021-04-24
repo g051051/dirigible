@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * Copyright (c) 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v2.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v20.html
  *
- * SPDX-FileCopyrightText: 2010-2020 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
+ * SPDX-FileCopyrightText: 2010-2021 SAP SE or an SAP affiliate company and Eclipse Dirigible contributors
  * SPDX-License-Identifier: EPL-2.0
  */
 angular.module('debugger', ['ngAnimate', 'ngSanitize', 'ui.bootstrap'])
@@ -67,7 +67,8 @@ angular.module('debugger', ['ngAnimate', 'ngSanitize', 'ui.bootstrap'])
 
 	function refreshDebugger(resourcePath) {
 		$scope.previewUrl = debuggerLocation + resourcePath;
-		$scope.previewUrl += "&refreshToken=" + new Date().getTime();
+		var tokenParam = 'refreshToken=' + new Date().getTime();
+		$scope.previewUrl += ($scope.previewUrl.indexOf('?') > 0 ? ($scope.previewUrl.endsWith('?') ? tokenParam : ('&' + tokenParam)) : ('?' + tokenParam));
 		$scope.$apply();
 	}
 	$messageHub.on('workspace.file.selected', function(msg) {

@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.eclipse.dirigible</groupId>
 		<artifactId>dirigible-api-parent</artifactId>
-		<version>5.7.0-SNAPSHOT</version>
+		<version>5.11.0-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -19,6 +19,7 @@
 		<module>api-security</module>
 		<module>api-core</module>
 		<module>api-database</module>
+		<module>api-documents</module>
 		<module>api-http</module>
 		<module>api-http-async</module>
 		<module>api-tests</module>
@@ -34,6 +35,12 @@
 		<module>api-net</module>
 		<module>api-kafka</module>
 		<module>api-mongodb</module>
+		<module>api-cassandra</module>
+		<module>api-elasticsearch</module>
+		<module>api-etcd</module>
+		<module>api-rabbitmq</module>
+		<module>api-redis</module>
+		<module>api-spark</module>
 	</modules>
 
 	<properties>
